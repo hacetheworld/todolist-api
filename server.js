@@ -2,13 +2,28 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const jwt=require("jsonwebtoken")
 const verifyToken = require("./middleware")
+const cors = require('cors')
+
 const app = express();
 const port = 3000;
+let corsOptions = {
+  origin: 'https://uuvec4.csb.app/',
+  optionsSuccessStatus: 200,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+
+  // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
+app.use(cors(corsOptions))
 
 // To parse URL encoded data
 app.use(bodyParser.urlencoded({ extended: true }));
 // To parse json data
 app.use(bodyParser.json());
+
+app.get('/', (req, res) =>{
+    res.send("Hello fuckers")
+});
 
 const users=[]
 
