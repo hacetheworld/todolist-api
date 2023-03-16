@@ -22,7 +22,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 app.get('/', (req, res) =>{
-    res.send("Hello fuckers")
+    res.send("Hello world")
 });
 
 const users=[]
@@ -46,8 +46,8 @@ app.post("/v1/login",(req,res)=>{
     console.log(email,password);
     let token=jwt.sign({email:req.body.email},"xyz")
       const decoded = jwt.verify(token,"xyz");
-      console.log(decoded);
-    console.log(token,"tokrn");
+    //   console.log(decoded);
+    // console.log(token,"tokrn");
     res.json({"message":flg,token})
 })
 
@@ -57,7 +57,7 @@ app.post("/createTask",(req,res)=>{
     const {id, title} = req.body
     data = {id, title}
     TODOLIST.push(data)
-    console.log(data)
+    // console.log(data)
     res.json({
         message:"item added successfully",
         data
@@ -65,18 +65,14 @@ app.post("/createTask",(req,res)=>{
 })
 
 app.get("/getTasks",(req,res)=>{
-    res.json({
-        TODOLIST
-    })
+    res.json(TODOLIST)
 
 })
 
 app.delete("/removeTask/:id",verifyToken,(req,res)=>{
     const {id} = req.params
     TODOLIST = TODOLIST.filter((item)=>item.id !== id)
-    res.json({
-        TODOLIST
-    })
+    res.json(TODOLIST)
 
 })
 
@@ -88,10 +84,8 @@ app.put("/editTask/:id",(req,res)=>{
             item.title = title
         }
     })
-    res.json({
-        TODOLIST
-    })
+    res.json(TODOLIST)
 
 })
-console.log(users,"users");
+// console.log(users,"users");
 app.listen(port, () => console.log(`Express app running on port ${port}!`));
