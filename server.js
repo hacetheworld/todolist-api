@@ -87,7 +87,7 @@ app.put("/editTask/:id",(req,res)=>{
     const {id} = req.params
     const {title} = req.body
     TODOLIST.forEach((item)=> {
-        if(item.id === id){
+        if(item.id === parseInt(id)){
             item.title = title
         }
     })
