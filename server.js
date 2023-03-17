@@ -28,6 +28,12 @@ app.get('/', (req, res) =>{
 const users=[]
 
 app.post("/v1/signup",(req,res)=>{
+    const {name,email,password}=req.body
+    for (let user of users){
+        if (email===user.email){
+            return res.json("user alredy exist")
+        }
+    }
     users.push(req.body)
     // console.log(users);
     res.json(req.body)
@@ -43,10 +49,11 @@ app.post("/v1/login",(req,res)=>{
             }
         }
     }
-    console.log(email,password);
+    // console.log(email,password);
     let token=jwt.sign({email:req.body.email},"xyz")
-      const decoded = jwt.verify(token,"xyz");
+    //   const decoded = jwt.verify(token,"xyz");
     //   console.log(decoded);
+    // if
     // console.log(token,"tokrn");
     res.json({"message":flg,token})
 })
@@ -70,8 +77,8 @@ app.get("/getTasks",(req,res)=>{
 })
 
 app.delete("/removeTask/:id",verifyToken,(req,res)=>{
-    const {id} = req.params
-    TODOLIST = TODOLIST.filter((item)=>item.id !== id)
+    const {id} =req.params
+    TODOLIST = TODOLIST.filter((item)=>item.id !== parseInt(id))
     res.json(TODOLIST)
 
 })
