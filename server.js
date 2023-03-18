@@ -1,7 +1,11 @@
+require('dotenv').config()
 const express = require('express');
 const bodyParser = require('body-parser');
 const jwt=require("jsonwebtoken")
 const verifyToken = require("./middleware")
+require('./db')
+const userModal = require("./modals/UserModal")
+
 const cors = require('cors')
 
 const app = express();
@@ -22,76 +26,118 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 app.get('/', (req, res) =>{
+    // console.log(process.env.url);
     res.send("Hello world")
 });
 
-const users=[]
+// const users=[]
 
-app.post("/v1/signup",(req,res)=>{
+app.post("/v1/signup", async (req,res)=>{
     const {name,email,password}=req.body
-    for (let user of users){
-        if (email===user.email){
-            return res.json("user alredy exist")
-        }
+    const user = await userModal.findOne({email})
+    if (user){
+        return res.status(200).json({message: "user already exist"})
     }
-    users.push(req.body)
-    // console.log(users);
-    res.json(req.body)
+    const newUser = new userModal({
+        name,
+        email,
+        password
+    })
+    try {
+        const dataToSave = await newUser.save();
+        res.status(200).json(dataToSave)
+    }
+    catch (error) {
+        res.status(400).json({message: error.message})
+    }
+    // users.push(req.body)
 
 })
-app.post("/v1/login",(req,res)=>{
+app.post("/v1/login",async(req,res)=>{
     let {email,password}=req.body
-    let flg=true
-    for (let user of users){
-        if (email===user.email){
-            if (password===user.password){
-                flg=false
-            }
+    try{
+        const user = await userModal.findOne({email})
+        if (user && user.password===password){
+            const id=user._id
+            const token=jwt.sign({id,email},process.env.SECRET_KEY)
+            return res.json({token})
         }
+        else{
+            return res.status(404).json({message:"user not found"})
+
+        }
+
+
+    }catch (error) {
+        res.status(400).json({message: error.message})
     }
-    // console.log(email,password);
-    let token=jwt.sign({email:req.body.email},"xyz")
-    //   const decoded = jwt.verify(token,"xyz");
-    //   console.log(decoded);
-    // if
-    // console.log(token,"tokrn");
-    res.json({"message":flg,token})
 })
 
 // todo list
 let TODOLIST=[{"id":1,"title":"hello world this is by default task"}]
-app.post("/createTask",(req,res)=>{
-    const {id, title} = req.body
-    data = {id, title}
-    TODOLIST.push(data)
-    // console.log(data)
-    res.json({
-        message:"item added successfully",
-        data
-    })
-})
-
-app.get("/getTasks",(req,res)=>{
-    res.json(TODOLIST)
-
-})
-
-app.delete("/removeTask/:id",verifyToken,(req,res)=>{
-    const {id} =req.params
-    TODOLIST = TODOLIST.filter((item)=>item.id !== parseInt(id))
-    res.json(TODOLIST)
-
-})
-
-app.put("/editTask/:id",(req,res)=>{
-    const {id} = req.params
-    const {title} = req.body
-    TODOLIST.forEach((item)=> {
-        if(item.id === parseInt(id)){
-            item.title = title
+app.post("/createTask",verifyToken,async(req,res)=>{
+    const {title,token} = req.body
+    const data = {title}
+    const {email}=jwt.verify(token,process.env.SECRET_KEY)
+    // console.log(email,"userid")
+    try {
+        const user=await userModal.findOne({email})
+        // console.log(user,"user")
+        if (user){
+            user.todo.push(data)
+            await user.save()
+            return res.json({
+                message:"item added successfully",
+                data
+            })
         }
-    })
-    res.json(TODOLIST)
+    } catch (error) {
+        return res.status(400).json({message:"you are not allowed to add todo"})
+    }
+
+})
+
+app.get("/getTasks",verifyToken,async(req,res)=>{
+    const {token} = req.body
+    const {email}=jwt.verify(token,process.env.SECRET_KEY)
+    try {
+        const user=await userModal.findOne({email})
+        return res.json(user.todo)
+    }catch(error){
+        return res.status(400).json({message:"permission not allowed"})
+    }
+
+})
+
+app.delete("/removeTask/:todoId",verifyToken,async(req,res)=>{
+    const {todoId} =req.params
+    const {token}=req.body
+    const decodedToken=jwt.verify(token,process.env.SECRET_KEY)
+    const userId = decodedToken.id;
+    const user = await userModal.findByIdAndUpdate(userId, {
+        $pull: { todo: { _id: todoId } }
+      }, { new: true });
+    res.json({message:"item deleted",user})
+
+})
+
+app.put("/editTask/:todoId",verifyToken,async(req,res)=>{
+    try {
+        const { todoId } = req.params;
+        const { token, new_title } = req.body;
+
+        const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+        const userId = decodedToken.id;
+        const user = await userModal.findOneAndUpdate(
+          { _id: userId, "todo._id": todoId },
+          { $set: { "todo.$.title": new_title } },
+          { new: true }
+        );
+        res.json(user);
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "something is wrong" });
+      }
 
 })
 // console.log(users,"users");
