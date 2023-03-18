@@ -34,7 +34,9 @@ app.get('/', (req, res) =>{
 
 app.post("/v1/signup", async (req,res)=>{
     const {name,email,password}=req.body
+    console.log(name,email,password,"sdfsd");
     const user = await userModal.findOne({email})
+
     if (user){
         return res.status(200).json({message: "user already exist"})
     }
