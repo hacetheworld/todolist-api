@@ -60,13 +60,14 @@ app.post("/v1/login",async(req,res)=>{
     try{
         const user = await userModal.findOne({email})
         console.log(user,"user")
+        let token=""
         if (user && user.password===password){
             const id=user._id
-            const token=jwt.sign({id,email},process.env.SECRET_KEY)
+            token=jwt.sign({id,email},process.env.SECRET_KEY)
             return res.json({token})
         }
         else{
-            return res.status(400).json({message:"user not found"})
+            return res.json({message:"user not found",token})
 
         }
 
