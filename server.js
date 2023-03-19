@@ -81,15 +81,17 @@ app.post("/v1/login",async(req,res)=>{
 let TODOLIST=[{"id":1,"title":"hello world this is by default task"}]
 app.post("/createTask",verifyToken,async(req,res)=>{
     const {title,token} = req.body
-    const data = {title}
     const {email}=jwt.verify(token,process.env.SECRET_KEY)
     // console.log(email,"userid")
     try {
         const user=await userModal.findOne({email})
         // console.log(user,"user")
         if (user){
-            user.todo.push(data)
+            user.todo.push({title})
             await user.save()
+            let todos = user.todo
+            console.log(todos[todos.length-1],"todos");
+            let data = todos[todos.length-1]
             return res.json({
                 message:"item added successfully",
                 data
@@ -105,6 +107,7 @@ app.get("/getTasks",verifyToken,async(req,res)=>{
     const {token} = req.body
     const {email}=jwt.verify(token,process.env.SECRET_KEY)
     try {
+
         const user=await userModal.findOne({email})
         return res.json(user.todo)
     }catch(error){
@@ -118,10 +121,15 @@ app.delete("/removeTask/:todoId",verifyToken,async(req,res)=>{
     const {token}=req.body
     const decodedToken=jwt.verify(token,process.env.SECRET_KEY)
     const userId = decodedToken.id;
-    const user = await userModal.findByIdAndUpdate(userId, {
-        $pull: { todo: { _id: todoId } }
-      }, { new: true });
-    res.json({message:"item deleted",user})
+    try {
+        const user = await userModal.findByIdAndUpdate(userId, {
+            $pull: { todo: { _id: todoId } }
+          }, { new: true });
+          res.json({message:"item deleted",user})
+
+    } catch (error) {
+        res.json({message:error.message})
+    }
 
 })
 
