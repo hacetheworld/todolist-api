@@ -104,8 +104,8 @@ app.post("/createTask",verifyToken,async(req,res)=>{
 })
 
 app.get("/getTasks",verifyToken,async(req,res)=>{
-    const {token} = req.body
-    const {email}=jwt.verify(token,process.env.SECRET_KEY)
+    const token =
+    req.body.token || req.query.token || req.headers["x-access-token"];    const {email}=jwt.verify(token,process.env.SECRET_KEY)
     try {
 
         const user=await userModal.findOne({email})
