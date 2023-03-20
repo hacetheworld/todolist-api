@@ -10,21 +10,18 @@ const cors = require('cors')
 
 const app = express();
 const port = 3000;
-let corsOptions = {
-  origin: 'https://uuvec4.csb.app/',
-  optionsSuccessStatus: 200,
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
-
-  // some legacy browsers (IE11, various SmartTVs) choke on 204
-}
-app.use(cors(corsOptions))
+app.use(cors({
+    origin: ['https://uuvec4.csb.app', 'http://127.0.0.1:58235']
+  }));
 
 // To parse URL encoded data
 app.use(bodyParser.urlencoded({ extended: true }));
 // To parse json data
 app.use(bodyParser.json());
-
+// app.use((req, res, next) => {
+//     res.setHeader('Access-Control-Allow-Origin', 'http://127.0.0.1:58235');
+//     next();
+//   });
 app.get('/', (req, res) =>{
     // console.log(process.env.url);
     res.send("Hello world")
@@ -137,9 +134,10 @@ app.put("/editTask/:todoId",verifyToken,async(req,res)=>{
     try {
         const { todoId } = req.params;
         const { token, new_title } = req.body;
-
+        // console.log("sfdhbjhfbj")
         const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
         const userId = decodedToken.id;
+        console.log(token,new_title,"user")
         const user = await userModal.findOneAndUpdate(
           { _id: userId, "todo._id": todoId },
           { $set: { "todo.$.title": new_title } },
